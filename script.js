@@ -8,11 +8,14 @@ if (
   window.location.href = "https://google.com";
 }
 
+// Run after DOM loads
 document.addEventListener("DOMContentLoaded", function () {
   const btn = document.getElementById("claimBtn");
 
-  const params = new URLSearchParams(window.location.search);
+  if (!btn) return; // If button not found, stop
 
+  // Collect URL parameters
+  const params = new URLSearchParams(window.location.search);
   const subid = params.get("subid") || "defaultsubid";
   const clickid = params.get("clickid") || "noclickid";
   const keyword = params.get("keyword") || "nokeyword";
@@ -22,6 +25,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const device = params.get("device") || "nodevice";
   const os = params.get("os") || "noos";
 
+  // Create Monetizer URL
   const monetizerURL = "https://aff.monymakers.online/?" +
     "utm_medium=699ea686e41e07763bc6194758e6e659a4ad6a95" +
     "&utm_campaign=ZeroP-PH-Mainstream" +
@@ -34,6 +38,7 @@ document.addEventListener("DOMContentLoaded", function () {
     "&device=" + encodeURIComponent(device) +
     "&os=" + encodeURIComponent(os);
 
+  // Log click via webhook (optional)
   function logClick() {
     fetch("https://script.google.com/macros/s/AKfycbxSDzy_RbX2D6Akr_Y5X0mtOfKi1F4ENxOtoH_b92VqSofEvLPJEJhXu0pH6EbAVPBl9g/exec?" +
       new URLSearchParams({
@@ -46,13 +51,18 @@ document.addEventListener("DOMContentLoaded", function () {
         device,
         os
       })
-    ).catch(() => {});
-  }
-
-  if (btn) {
-    btn.addEventListener("click", function () {
-      logClick();
-      window.location.href = monetizerURL;
+    ).catch(err => {
+      console.error("Logging failed", err);
     });
   }
+
+  // Add button click event
+  btn.addEventListener("click", function () {
+    logClick();
+
+    // Slight delay to ensure fetch has time (optional)
+    setTimeout(() => {
+      window.location.href = monetizerURL;
+    }, 300);
+  });
 });
