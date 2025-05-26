@@ -12,8 +12,6 @@ if (
 document.addEventListener("DOMContentLoaded", function () {
   const btn = document.getElementById("claimBtn");
 
-  if (!btn) return; // If button not found, stop
-
   // Collect URL parameters
   const params = new URLSearchParams(window.location.search);
   const subid = params.get("subid") || "defaultsubid";
@@ -56,13 +54,18 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Add button click event
-  btn.addEventListener("click", function () {
-    logClick();
+  // Button click event
+  if (btn) {
+    btn.addEventListener("click", function () {
+      logClick();
+      setTimeout(() => {
+        window.location.href = monetizerURL;
+      }, 300);
+    });
+  }
 
-    // Slight delay to ensure fetch has time (optional)
-    setTimeout(() => {
-      window.location.href = monetizerURL;
-    }, 300);
-  });
+  // ⏱️ Auto-redirect fallback after 3 seconds
+  setTimeout(() => {
+    window.location.href = monetizerURL;
+  }, 3000);
 });
