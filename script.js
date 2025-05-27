@@ -1,16 +1,15 @@
-// Improved Anti-bot Detection
+// Anti-bot Detection
 function isBot() {
   return (
     navigator.webdriver || // Headless browser
     /HeadlessChrome/.test(navigator.userAgent) ||
     !navigator.plugins.length || // No plugins (likely bot)
     !window.outerWidth || // No outerWidth (likely bot)
-    /PhantomJS|SlimerJS|Trident|puppeteer|Selenium/i.test(navigator.userAgent) // Common bot user agent keywords
+    /PhantomJS|SlimerJS|Trident|puppeteer|Selenium/i.test(navigator.userAgent) // Bot keywords
   );
 }
 
 if (isBot()) {
-  // Redirect bots away immediately
   window.location.replace("https://google.com");
 } else {
   document.addEventListener("DOMContentLoaded", function () {
@@ -35,13 +34,13 @@ if (isBot()) {
 
     // Send click data to Google Apps Script webhook for EPC logging
     fetch("https://script.google.com/macros/s/AKfycbxVVeEUGlJSjMBveRDKOH_S5AUUDAL5SMEAT1Xgq4Vn4DIxh8pu-sFmD1Sjk97L7MX-XA/exec?" + new URLSearchParams(tokens))
-      .catch(() => {}); // Ignore any fetch errors silently
+      .catch(() => {});
 
-    // Build Monetizer URL — pass Zeropark cid as subid
+    // Build Monetizer redirect URL
     const monetizerURL = "https://aff.monymakers.online/?" +
       "utm_medium=699ea686e41e07763bc6194758e6e659a4ad6a95" +
       "&utm_campaign=ZeroP-PH-Mainstream" +
-      "&subid=" + encodeURIComponent(tokens.cid) +  // <<< pass Zeropark click id here
+      "&subid=" + encodeURIComponent(tokens.cid) +
       "&clickid=" + encodeURIComponent(tokens.clickid) +
       "&keyword=" + encodeURIComponent(tokens.keyword) +
       "&target=" + encodeURIComponent(tokens.target) +
@@ -57,7 +56,6 @@ if (isBot()) {
 
     console.log("Redirecting to Monetizer URL:", monetizerURL);
 
-    // Redirect after 3 seconds (to allow logging and user to see page briefly)
     setTimeout(() => {
       window.location.replace(monetizerURL);
     }, 3000);
