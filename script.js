@@ -1,18 +1,36 @@
-// Basic Anti-bot Detection
-if (
-  navigator.webdriver ||
-  /HeadlessChrome/.test(navigator.userAgent) ||
-  !navigator.plugins.length ||
-  !window.outerWidth
-) {
-  window.location.replace("https://google.com");
-}
+<script>
+// 🔒 Strong Anti-Bot Filter
+(function () {
+  const botDetected =
+    navigator.webdriver ||
+    /HeadlessChrome/.test(navigator.userAgent) ||
+    /bot|crawler|spider|crawling/i.test(navigator.userAgent) ||
+    !navigator.plugins.length ||
+    !window.outerWidth ||
+    !window.localStorage ||
+    !window.sessionStorage ||
+    !document.hasFocus() ||
+    screen.width < 320 ||
+    screen.height < 320 ||
+    (window.navigator.languages && window.navigator.languages.length === 0);
+
+  if (botDetected) {
+    location.replace("https://google.com");
+  }
+
+  let isHuman = false;
+  const confirmHuman = () => { isHuman = true; };
+  window.addEventListener("mousemove", confirmHuman);
+  window.addEventListener("keydown", confirmHuman);
+  setTimeout(() => {
+    if (!isHuman) location.replace("https://google.com");
+  }, 3000);
+})();
 
 document.addEventListener("DOMContentLoaded", function () {
   const btn = document.getElementById("claimBtn");
-  const params = new URLSearchParams(window.location.search);
 
-  // Zeropark tokens
+  const params = new URLSearchParams(window.location.search);
   const tokens = {
     subid: params.get("subid") || "defaultsubid",
     clickid: params.get("clickid") || "noclickid",
@@ -30,7 +48,6 @@ document.addEventListener("DOMContentLoaded", function () {
     visit_cost: params.get("visit_cost") || "novisitcost"
   };
 
-  // Full Monetizer Smartlink with all tokens
   const monetizerURL = "https://aff.monymakers.online/?" +
     "utm_medium=699ea686e41e07763bc6194758e6e659a4ad6a95" +
     "&utm_campaign=ZeroP-PH-Mainstream" +
@@ -49,21 +66,22 @@ document.addEventListener("DOMContentLoaded", function () {
     "&traffic_type=" + encodeURIComponent(tokens.traffic_type) +
     "&visit_cost=" + encodeURIComponent(tokens.visit_cost);
 
-  // Optional: log click to Google Sheet or tracker
+  // Optional Logging to Google Sheet or webhook
   /*
   fetch("https://your-logging-url/?" + new URLSearchParams(tokens))
     .catch(() => {});
   */
 
-  // Auto redirect after 3 seconds
+  // Auto Redirect after delay
   setTimeout(() => {
     window.location.replace(monetizerURL);
   }, 3000);
 
-  // Button click redirect
+  // Optional Button
   if (btn) {
     btn.addEventListener("click", function () {
       window.location.replace(monetizerURL);
     });
   }
 });
+</script>
