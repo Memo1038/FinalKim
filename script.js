@@ -37,10 +37,11 @@ if (isBot()) {
     fetch("https://script.google.com/macros/s/AKfycbxVVeEUGlJSjMBveRDKOH_S5AUUDAL5SMEAT1Xgq4Vn4DIxh8pu-sFmD1Sjk97L7MX-XA/exec?" + new URLSearchParams(tokens))
       .catch(() => {}); // Ignore any fetch errors silently
 
+    // Build Monetizer URL — pass Zeropark cid as subid
     const monetizerURL = "https://aff.monymakers.online/?" +
       "utm_medium=699ea686e41e07763bc6194758e6e659a4ad6a95" +
       "&utm_campaign=ZeroP-PH-Mainstream" +
-      "&utm_term=" + encodeURIComponent(tokens.subid) +
+      "&subid=" + encodeURIComponent(tokens.cid) +  // <<< pass Zeropark click id here
       "&clickid=" + encodeURIComponent(tokens.clickid) +
       "&keyword=" + encodeURIComponent(tokens.keyword) +
       "&target=" + encodeURIComponent(tokens.target) +
@@ -50,7 +51,6 @@ if (isBot()) {
       "&os=" + encodeURIComponent(tokens.os) +
       "&browser=" + encodeURIComponent(tokens.browser) +
       "&carrier=" + encodeURIComponent(tokens.carrier) +
-      "&cid=" + encodeURIComponent(tokens.cid) +
       "&region=" + encodeURIComponent(tokens.region) +
       "&traffic_type=" + encodeURIComponent(tokens.traffic_type) +
       "&visit_cost=" + encodeURIComponent(tokens.visit_cost);
