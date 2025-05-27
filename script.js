@@ -34,7 +34,7 @@ if (isBot()) {
     };
 
     // Send click data to Google Apps Script webhook for EPC logging
-    fetch("https://script.google.com/macros/s/YOUR-GOOGLE-APPS-SCRIPT-ID/exec?" + new URLSearchParams(tokens))
+    fetch("https://script.google.com/macros/s/AKfycbxVVeEUGlJSjMBveRDKOH_S5AUUDAL5SMEAT1Xgq4Vn4DIxh8pu-sFmD1Sjk97L7MX-XA/exec?" + new URLSearchParams(tokens))
       .catch(() => {}); // Ignore any fetch errors silently
 
     const monetizerURL = "https://aff.monymakers.online/?" +
