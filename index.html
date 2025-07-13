@@ -86,10 +86,15 @@
       <option value="UAE">UAE</option>
       <option value="Other">Other</option>
     </select>
+    <button class="icon-btn" onclick="validateAndContinue()">Next / التالي</button>
+  </div>
+
+  <div id="page-social-login" class="hidden">
+    <h2>Sign up using:</h2>
     <div class="social-buttons">
       <div class="g-signin2" data-onsuccess="onGoogleSignIn"></div>
-      <button class="icon-btn" onclick="fakeLogin('Facebook')">Login with Facebook</button>
-      <button class="icon-btn" onclick="fakeLogin('Instagram')">Login with Instagram</button>
+      <a class="icon-btn" href="https://www.facebook.com/" target="_blank">Login with Facebook</a>
+      <a class="icon-btn" href="https://www.instagram.com/" target="_blank">Login with Instagram</a>
     </div>
   </div>
 
@@ -113,7 +118,7 @@
     let userLanguage = '';
     let userRole = '';
     let medications = [];
-    let patientId = '';
+    let userData = {};
 
     function selectLanguage(lang) {
       userLanguage = lang;
@@ -128,12 +133,7 @@
       document.getElementById('page-create-account').classList.remove('hidden');
     }
 
-    function onGoogleSignIn(googleUser) {
-      const profile = googleUser.getBasicProfile();
-      submitAccount(profile.getName(), profile.getEmail(), 'Google');
-    }
-
-    function fakeLogin(provider) {
+    function validateAndContinue() {
       const name = document.getElementById('name').value;
       const age = document.getElementById('age').value;
       const email = document.getElementById('email').value;
@@ -144,25 +144,40 @@
         alert('Please fill in all required fields.');
         return;
       }
-      submitAccount(name, email, provider);
+
+      userData = { name, age, email, phone, country };
+      document.getElementById('page-create-account').classList.add('hidden');
+      document.getElementById('page-social-login').classList.remove('hidden');
     }
 
-    function submitAccount(name, email, provider) {
-      document.getElementById('page-create-account').classList.add('hidden');
+    function onGoogleSignIn(googleUser) {
+      const profile = googleUser.getBasicProfile();
+      const provider = 'Google';
+      const email = profile.getEmail();
+
+      completeSignup(email, provider);
+    }
+
+    function completeSignup(email, provider) {
+      document.getElementById('page-social-login').classList.add('hidden');
       document.getElementById('page-medications').classList.remove('hidden');
 
       const timestamp = new Date().toISOString();
-      fetch('https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec', {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, provider, role: userRole, time: timestamp })
-      });
+
+      // Connect this object to your Google Sheets script
+      const data = {
+        ...userData,
+        email: email,
+        provider: provider,
+        role: userRole,
+        time: timestamp
+      };
+
+      console.log("Send to Google Sheets:", data);
 
       if (userRole === 'family') {
-        patientId = prompt("Enter your patient's email to connect accounts:");
-        // For demo only: we would store this in a real DB
-        console.log(`Family account linked to patient: ${patientId}`);
+        const patientId = prompt("Enter your patient's email to connect accounts:");
+        console.log(`Family linked to patient: ${patientId}`);
       }
     }
 
