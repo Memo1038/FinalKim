@@ -1,9 +1,10 @@
-<!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DosiThink</title>
+  <script src="https://apis.google.com/js/platform.js" async defer></script>
+  <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
   <script src="https://ipapi.co/json/" async defer></script>
   <style>
     body {
@@ -52,6 +53,7 @@
     }
     .hidden { display: none; }
     .medication-form { margin-top: 20px; }
+    .social-buttons { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 20px; }
     .rtl { direction: rtl; text-align: right; }
   </style>
 </head>
@@ -86,6 +88,13 @@
       <option value="Other">Other</option>
     </select>
     <button class="icon-btn" onclick="validateAndContinue()">Next / التالي</button>
+  </div>
+
+  <div id="page-social-login" class="hidden">
+    <h2 id="google-login-label">Sign up using Google:</h2>
+    <div class="social-buttons">
+      <div class="g-signin2" data-onsuccess="onGoogleSignIn"></div>
+    </div>
   </div>
 
   <div id="page-medications" class="hidden">
@@ -138,6 +147,7 @@
     function selectLanguage(lang) {
       userLanguage = lang;
       document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      document.getElementById('google-login-label').innerText = lang === 'ar' ? 'التسجيل عن طريق جوجل' : 'Sign up using Google:';
       document.getElementById('page-language').classList.add('hidden');
       document.getElementById(lang === 'en' ? 'page-role-en' : 'page-role-ar').classList.remove('hidden');
     }
@@ -162,7 +172,37 @@
 
       userData = { name, age, email, phone, country };
       document.getElementById('page-create-account').classList.add('hidden');
+      document.getElementById('page-social-login').classList.remove('hidden');
+    }
+
+    function onGoogleSignIn(googleUser) {
+      const profile = googleUser.getBasicProfile();
+      const provider = 'Google';
+      const email = profile.getEmail();
+
+      completeSignup(email, provider);
+    }
+
+    function completeSignup(email, provider) {
+      document.getElementById('page-social-login').classList.add('hidden');
       document.getElementById('page-medications').classList.remove('hidden');
+
+      const timestamp = new Date().toISOString();
+
+      const data = {
+        ...userData,
+        email: email,
+        provider: provider,
+        role: userRole,
+        time: timestamp
+      };
+
+      console.log("Send to Google Sheets:", data);
+
+      if (userRole === 'family') {
+        const patientId = prompt("Enter your patient's email to connect accounts:");
+        console.log(`Family linked to patient: ${patientId}`);
+      }
     }
 
     document.getElementById('medication-form').addEventListener('submit', function(e) {
@@ -185,24 +225,27 @@
       if (!("Notification" in window)) return;
 
       Notification.requestPermission().then(permission => {
-        if (permission !== "granted") {
-          console.warn("Notification permission denied");
-          return;
+        if (permission !== "granted") return;
+
+        const now = new Date();
+        const [h, m] = timeStr.split(":").map(Number);
+        const target = new Date();
+        target.setHours(h);
+        target.setMinutes(m);
+        target.setSeconds(0);
+        target.setMilliseconds(0);
+
+        if (target < now) {
+          target.setDate(target.getDate() + 1);
         }
 
-        const [targetH, targetM] = timeStr.split(":").map(Number);
+        const delay = target.getTime() - now.getTime();
 
-        const checkInterval = setInterval(() => {
-          const now = new Date();
-          const currentH = now.getHours();
-          const currentM = now.getMinutes();
+        const timeoutId = setTimeout(() => {
+          new Notification(`Time to take: ${medName}`);
+        }, delay);
 
-          if (currentH === targetH && currentM === targetM) {
-            new Notification(`⏰ Time to take: ${medName}`);
-          }
-        }, 60000); // Check every minute
-
-        scheduledNotifications.push(checkInterval);
+        scheduledNotifications.push(timeoutId);
       });
     }
   </script>
