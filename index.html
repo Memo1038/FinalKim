@@ -1,86 +1,204 @@
-<!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
-    <meta charset="UTF-8">
-    <title>New Private Message</title>
-    <link rel="stylesheet" href="style.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DosiThink</title>
+  <script src="https://apis.google.com/js/platform.js" async defer></script>
+  <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #ffffff;
+      color: #0D47A1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2.5em;
+      font-weight: bold;
+    }
+    h2 {
+      font-size: 1.2em;
+      color: #607D8B;
+      margin-bottom: 30px;
+    }
+    .icon-btn {
+      display: block;
+      width: 90%;
+      max-width: 300px;
+      padding: 15px;
+      margin: 10px auto;
+      font-size: 1.1em;
+      text-align: center;
+      background-color: #A8E6CF;
+      color: #000;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+    }
+    input, select {
+      width: 90%;
+      max-width: 300px;
+      padding: 10px;
+      margin: 10px auto;
+      display: block;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .hidden { display: none; }
+    .medication-form { margin-top: 20px; }
+    .social-buttons { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 20px; }
+    .rtl { direction: rtl; text-align: right; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="message">
-            <h2>✅ 7 Missed Calls from Maria</h2>
-            <p>3 Messages</p>
-        </div>
-        <button id="claimBtn">Recall back</button>
+  <div id="page-language">
+    <h1>DosiThink</h1>
+    <h2>Because Every Dose Matters</h2>
+    <button class="icon-btn" onclick="selectLanguage('en')">English</button>
+    <button class="icon-btn" onclick="selectLanguage('ar')">العربية</button>
+  </div>
+
+  <div id="page-role-en" class="hidden">
+    <button class="icon-btn" onclick="selectRole('en', 'patient')">I am a Patient</button>
+    <button class="icon-btn" onclick="selectRole('en', 'family')">I am a Family Member</button>
+  </div>
+
+  <div id="page-role-ar" class="hidden rtl">
+    <button class="icon-btn" onclick="selectRole('ar', 'patient')">أنا المريض</button>
+    <button class="icon-btn" onclick="selectRole('ar', 'family')">فرد من العائلة</button>
+  </div>
+
+  <div id="page-create-account" class="hidden">
+    <input type="text" id="name" placeholder="Name / الاسم" required>
+    <input type="number" id="age" placeholder="Age / العمر" required>
+    <input type="email" id="email" placeholder="Email / البريد الإلكتروني" required>
+    <input type="tel" id="phone" placeholder="Phone Number / رقم الهاتف" required>
+    <select id="country" required>
+      <option value="">Select Country / اختر الدولة</option>
+      <option value="Egypt">Egypt</option>
+      <option value="Saudi Arabia">Saudi Arabia</option>
+      <option value="UAE">UAE</option>
+      <option value="Other">Other</option>
+    </select>
+    <div class="social-buttons">
+      <div class="g-signin2" data-onsuccess="onGoogleSignIn"></div>
+      <button class="icon-btn" onclick="fakeLogin('Facebook')">Login with Facebook</button>
+      <button class="icon-btn" onclick="fakeLogin('Instagram')">Login with Instagram</button>
     </div>
-    <script src="script.js"></script>
-      <!-- Your landing page content (HTML, CTA, images, etc.) -->
+  </div>
+
+  <div id="page-medications" class="hidden">
+    <h2>My Medications / أدويتي</h2>
+    <form id="medication-form" class="medication-form">
+      <input type="text" id="med-name" placeholder="Medication Name / اسم الدواء" required>
+      <input type="text" id="med-dose" placeholder="Dose / الجرعة" required>
+      <input type="text" id="med-indication" placeholder="Indication / السبب" required>
+      <input type="time" id="med-time" required>
+      <select id="med-repeat">
+        <option value="daily">Daily / يومي</option>
+        <option value="weekly">Weekly / أسبوعي</option>
+      </select>
+      <button class="icon-btn" type="submit">Add Medication / أضف دواء</button>
+    </form>
+    <ul id="medication-list"></ul>
+  </div>
 
   <script>
-// === Anti-Bot Detection ===
-function isBot() {
-  return (
-    navigator.webdriver ||
-    /HeadlessChrome/.test(navigator.userAgent) ||
-    !navigator.plugins.length ||
-    !window.outerWidth ||
-    /PhantomJS|SlimerJS|Trident|puppeteer|Selenium/i.test(navigator.userAgent)
-  );
-}
+    let userLanguage = '';
+    let userRole = '';
+    let medications = [];
+    let patientId = '';
 
-if (isBot()) {
-  window.location.replace("https://google.com");
-} else {
-  document.addEventListener("DOMContentLoaded", function () {
-    const params = new URLSearchParams(window.location.search);
+    function selectLanguage(lang) {
+      userLanguage = lang;
+      document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      document.getElementById('page-language').classList.add('hidden');
+      document.getElementById(lang === 'en' ? 'page-role-en' : 'page-role-ar').classList.remove('hidden');
+    }
 
-    const tokens = {
-      subid: params.get("subid") || "defaultsubid",
-      clickid: params.get("clickid") || "noclickid",
-      keyword: params.get("keyword") || "nokeyword",
-      target: params.get("target") || "notarget",
-      source: params.get("source") || "nosource",
-      geo: params.get("geo") || "nogeo",
-      device: params.get("device") || "nodevice",
-      os: params.get("os") || "noos",
-      browser: params.get("browser") || "nobrowser",
-      carrier: params.get("carrier") || "nocarrier",
-      cid: params.get("cid") || "nocid",
-      region: params.get("region") || "noregion",
-      traffic_type: params.get("traffic_type") || "notraffictype",
-      visit_cost: params.get("visit_cost") || "novisitcost"
-    };
+    function selectRole(lang, role) {
+      userRole = role;
+      document.getElementById(lang === 'en' ? 'page-role-en' : 'page-role-ar').classList.add('hidden');
+      document.getElementById('page-create-account').classList.remove('hidden');
+    }
 
-    fetch("https://script.google.com/macros/s/AKfycbxVVeEUGlJSjMBveRDKOH_S5AUUDAL5SMEAT1Xgq4Vn4DIxh8pu-sFmD1Sjk97L7MX-XA/exec?" + new URLSearchParams(tokens))
-      .catch(() => {});
+    function onGoogleSignIn(googleUser) {
+      const profile = googleUser.getBasicProfile();
+      submitAccount(profile.getName(), profile.getEmail(), 'Google');
+    }
 
-    const monetizerURL = "https://aff.monymakers.online/?" +
-      "utm_medium=699ea686e41e07763bc6194758e6e659a4ad6a95" +
-      "&utm_campaign=ZeroP-PH-Mainstream" +
-      "&subid=" + encodeURIComponent(tokens.cid) +
-      "&clickid=" + encodeURIComponent(tokens.clickid) +
-      "&keyword=" + encodeURIComponent(tokens.keyword) +
-      "&target=" + encodeURIComponent(tokens.target) +
-      "&source=" + encodeURIComponent(tokens.source) +
-      "&geo=" + encodeURIComponent(tokens.geo) +
-      "&device=" + encodeURIComponent(tokens.device) +
-      "&os=" + encodeURIComponent(tokens.os) +
-      "&browser=" + encodeURIComponent(tokens.browser) +
-      "&carrier=" + encodeURIComponent(tokens.carrier) +
-      "&region=" + encodeURIComponent(tokens.region) +
-      "&traffic_type=" + encodeURIComponent(tokens.traffic_type) +
-      "&visit_cost=" + encodeURIComponent(tokens.visit_cost);
+    function fakeLogin(provider) {
+      const name = document.getElementById('name').value;
+      const age = document.getElementById('age').value;
+      const email = document.getElementById('email').value;
+      const phone = document.getElementById('phone').value;
+      const country = document.getElementById('country').value;
 
-    setTimeout(() => {
-      window.location.replace(monetizerURL);
-    }, 3000);
-  });
-}
+      if (!name || !age || !email || !phone || !country) {
+        alert('Please fill in all required fields.');
+        return;
+      }
+      submitAccount(name, email, provider);
+    }
+
+    function submitAccount(name, email, provider) {
+      document.getElementById('page-create-account').classList.add('hidden');
+      document.getElementById('page-medications').classList.remove('hidden');
+
+      const timestamp = new Date().toISOString();
+      fetch('https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec', {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, provider, role: userRole, time: timestamp })
+      });
+
+      if (userRole === 'family') {
+        patientId = prompt("Enter your patient's email to connect accounts:");
+        // For demo only: we would store this in a real DB
+        console.log(`Family account linked to patient: ${patientId}`);
+      }
+    }
+
+    document.getElementById('medication-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const name = document.getElementById('med-name').value;
+      const dose = document.getElementById('med-dose').value;
+      const indication = document.getElementById('med-indication').value;
+      const time = document.getElementById('med-time').value;
+      const repeat = document.getElementById('med-repeat').value;
+
+      medications.push({ name, dose, indication, time, repeat });
+      const li = document.createElement('li');
+      li.innerText = `${name} - ${dose} - ${indication} @ ${time} (${repeat})`;
+      document.getElementById('medication-list').appendChild(li);
+
+      scheduleNotification(name, time);
+    });
+
+    function scheduleNotification(medName, timeStr) {
+      if (!("Notification" in window)) return;
+      Notification.requestPermission().then(permission => {
+        if (permission !== "granted") return;
+
+        const now = new Date();
+        const [h, m] = timeStr.split(":").map(Number);
+        const target = new Date(now);
+        target.setHours(h, m, 0, 0);
+        if (target <= now) target.setDate(now.getDate() + 1);
+
+        const delay = target - now;
+        setTimeout(() => {
+          new Notification(`Time to take: ${medName}`);
+        }, delay);
+      });
+    }
   </script>
-
-</body>
-</html>
-
 </body>
 </html>
