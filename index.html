@@ -5,6 +5,7 @@
   <title>DosiThink</title>
   <script src="https://apis.google.com/js/platform.js" async defer></script>
   <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
+  <script src="https://ipapi.co/json/" async defer></script>
   <style>
     body {
       margin: 0;
@@ -90,11 +91,9 @@
   </div>
 
   <div id="page-social-login" class="hidden">
-    <h2>Sign up using:</h2>
+    <h2>Sign up using Google:</h2>
     <div class="social-buttons">
       <div class="g-signin2" data-onsuccess="onGoogleSignIn"></div>
-      <a class="icon-btn" href="https://www.facebook.com/" target="_blank">Login with Facebook</a>
-      <a class="icon-btn" href="https://www.instagram.com/" target="_blank">Login with Instagram</a>
     </div>
   </div>
 
@@ -119,6 +118,30 @@
     let userRole = '';
     let medications = [];
     let userData = {};
+
+    window.onload = function () {
+      fetch('https://ipapi.co/json/')
+        .then(response => response.json())
+        .then(data => {
+          const countryCode = data.country_calling_code || '';
+          const country = data.country_name || '';
+
+          const phoneInput = document.getElementById('phone');
+          if (countryCode && phoneInput) {
+            phoneInput.value = countryCode + ' ';
+          }
+
+          const countrySelect = document.getElementById('country');
+          if (countrySelect) {
+            for (let option of countrySelect.options) {
+              if (option.text.toLowerCase().includes(country.toLowerCase())) {
+                option.selected = true;
+                break;
+              }
+            }
+          }
+        });
+    };
 
     function selectLanguage(lang) {
       userLanguage = lang;
@@ -164,7 +187,6 @@
 
       const timestamp = new Date().toISOString();
 
-      // Connect this object to your Google Sheets script
       const data = {
         ...userData,
         email: email,
