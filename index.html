@@ -29,6 +29,26 @@
     .hidden {
       display: none;
     }
+    .phone-container {
+      display: flex;
+      max-width: 400px;
+      margin: auto;
+    }
+    .phone-container span {
+      background: #ddd;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-right: none;
+      border-radius: 5px 0 0 5px;
+      user-select: none;
+    }
+    .phone-container input {
+      flex: 1;
+      border-radius: 0 5px 5px 0;
+      border-left: none;
+      padding: 12px;
+      font-size: 1em;
+    }
     .med-item {
       background: white;
       border: 1px solid #ccc;
@@ -36,29 +56,26 @@
       margin: 10px 0;
       border-radius: 5px;
     }
-    iframe {
-      display: block;
-      margin: auto;
-      width: 100%;
-      max-width: 700px;
-      height: 520px;
-      border: none;
-    }
   </style>
 </head>
 <body>
-
   <h1>DosiThink</h1>
   <h2>Because Every Dose Matters</h2>
 
-  <!-- Google Form embedded -->
   <div id="form-section">
-    <iframe id="googleForm" src="https://docs.google.com/forms/d/e/1FAIpQLSc8jDPYWLYRoYcCB4JHJ-i1kVBc75Q2nkdDkKQ7oGII_pYxiA/viewform?embedded=true" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+    <input type="text" id="name" placeholder="Name" required />
+    <input type="number" id="age" placeholder="Age" required />
+    <input type="email" id="email" placeholder="Email" required />
+    <div class="phone-container">
+      <span id="country-code">+XX</span>
+      <input type="tel" id="phone" placeholder="Phone Number" required />
+    </div>
+    <select id="country" required><option value="">Detecting...</option></select>
+    <button onclick="submitUser()">Start</button>
   </div>
 
-  <!-- Medication section appears after form submission -->
   <div id="medication-section" class="hidden">
-    <h2 id="welcome-name">Welcome</h2>
+    <h2 id="welcome-name"></h2>
     <form id="med-form">
       <input type="text" id="med-name" placeholder="Drug Name" required />
       <input type="text" id="med-dose" placeholder="Dose" required />
@@ -74,30 +91,41 @@
   </div>
 
   <script>
+    let user = {};
     let meds = [];
 
-    // Detect when the Google Form is submitted (basic workaround using time delay)
-    const formSection = document.getElementById('form-section');
-    const medSection = document.getElementById('medication-section');
+    // Detect IP country and set phone code + country name
+    window.onload = () => {
+      fetch("https://ipapi.co/json")
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("country-code").innerText = data.country_calling_code || "+XX";
+          document.getElementById("country").innerHTML = `<option selected>${data.country_name}</option>`;
+        });
+    };
 
-    // Set a delay to allow form submission before showing medication screen
-    window.addEventListener('message', function(e) {
-      if (e.origin.includes("google.com")) {
-        console.log("Message received from Google iframe:", e.data);
-      }
-    });
+    function submitUser() {
+      const name = document.getElementById("name").value.trim();
+      const age = document.getElementById("age").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const fullPhone = document.getElementById("country-code").innerText + " " + phone;
+      const country = document.getElementById("country").value.trim();
 
-    // Watch for when user scrolls down or waits a while (simulate form submission)
-    setTimeout(() => {
-      const proceed = confirm("Did you finish the form?");
-      if (proceed) {
-        formSection.classList.add('hidden');
-        medSection.classList.remove('hidden');
-        document.getElementById("welcome-name").innerText = `Welcome to DosiThink`;
+      if (!name || !age || !email || !phone || !country) {
+        alert("Please fill in all fields");
+        return;
       }
-    }, 15000); // You can adjust the delay (ms)
-    
-    // Add medications
+
+      user = { name, age, email, phone: fullPhone, country };
+
+      // Move to medication screen
+      document.getElementById("form-section").classList.add("hidden");
+      document.getElementById("medication-section").classList.remove("hidden");
+      document.getElementById("welcome-name").innerText = `Welcome Mr. ${name}`;
+    }
+
+    // Handle medication form
     document.getElementById("med-form").addEventListener("submit", function (e) {
       e.preventDefault();
       const name = document.getElementById("med-name").value;
