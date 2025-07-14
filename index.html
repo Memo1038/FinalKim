@@ -56,38 +56,28 @@
       box-sizing: border-box;
     }
     .hidden { display: none; }
-    .medication-form { margin-top: 20px; }
-    #summary-table {
-      width: 100%;
-      max-width: 600px;
+    .rtl { direction: rtl; text-align: right; }
+    #notification-box {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      background: #fff;
+      border: 2px solid #0D47A1;
+      padding: 15px;
+      border-radius: 10px;
+      z-index: 9999;
+      text-align: center;
+    }
+    table {
       border-collapse: collapse;
       margin-top: 20px;
+      width: 100%;
+      max-width: 600px;
     }
-    #summary-table th, #summary-table td {
+    th, td {
       border: 1px solid #ccc;
       padding: 10px;
       text-align: center;
-    }
-    #notification-box {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #fff;
-      border: 2px solid #0D47A1;
-      padding: 20px;
-      border-radius: 10px;
-      z-index: 9999;
-      display: none;
-      text-align: center;
-    }
-    #notification-box h3 {
-      margin: 0 0 10px;
-    }
-    #summary-btn {
-      background-color: #4A90E2;
-      color: white;
-      margin-top: 20px;
     }
   </style>
 </head>
@@ -99,10 +89,41 @@
     <button onclick="snoozeDose()">🕒 Snooze 10 min</button>
   </div>
 
-  <div id="page-medications">
+  <div id="page-language">
     <h1>DosiThink</h1>
+    <h2>Because Every Dose Matters</h2>
+    <button class="icon-btn" onclick="selectLanguage('en')">English</button>
+    <button class="icon-btn" onclick="selectLanguage('ar')">العربية</button>
+  </div>
+
+  <div id="page-role-en" class="hidden">
+    <button class="icon-btn" onclick="selectRole('en', 'patient')">I am a Patient</button>
+    <button class="icon-btn" onclick="selectRole('en', 'family')">I am a Family Member</button>
+  </div>
+
+  <div id="page-role-ar" class="hidden rtl">
+    <button class="icon-btn" onclick="selectRole('ar', 'patient')">أنا المريض</button>
+    <button class="icon-btn" onclick="selectRole('ar', 'family')">فرد من العائلة</button>
+  </div>
+
+  <div id="page-create-account" class="hidden">
+    <input type="text" id="name" placeholder="Name / الاسم" required>
+    <input type="number" id="age" placeholder="Age / العمر" required>
+    <input type="email" id="email" placeholder="Email / البريد الإلكتروني" required>
+    <input type="tel" id="phone" placeholder="Phone Number / رقم الهاتف" readonly required>
+    <select id="country" required>
+      <option value="">Select Country / اختر الدولة</option>
+      <option value="Egypt">Egypt</option>
+      <option value="Saudi Arabia">Saudi Arabia</option>
+      <option value="UAE">UAE</option>
+      <option value="Other">Other</option>
+    </select>
+    <button class="icon-btn" onclick="validateAndContinue()">Next / التالي</button>
+  </div>
+
+  <div id="page-medications" class="hidden">
     <h2>My Medications / أدويتي</h2>
-    <form id="medication-form" class="medication-form">
+    <form id="medication-form">
       <input type="text" id="med-name" placeholder="Medication Name / اسم الدواء" required>
       <input type="text" id="med-dose" placeholder="Dose / الجرعة" required>
       <input type="text" id="med-indication" placeholder="Drug used for / دواء علاج" required>
@@ -113,7 +134,7 @@
       </select>
       <button class="icon-btn" type="submit">Add Medication / أضف دواء</button>
     </form>
-    <button id="summary-btn" class="icon-btn" onclick="showSummary()">📋 View My Medication Summary</button>
+    <button class="icon-btn" onclick="showSummary()">📋 View My Medication Summary</button>
     <div id="med-summary"></div>
   </div>
 
@@ -122,9 +143,58 @@
   </audio>
 
   <script>
+    let userLanguage = '';
+    let userRole = '';
     let medications = [];
-    let snoozedDose = null;
     let currentAlertIndex = null;
+    let snoozedDose = null;
+
+    window.onload = function () {
+      fetch('https://ipapi.co/json/')
+        .then(response => response.json())
+        .then(data => {
+          const phoneInput = document.getElementById('phone');
+          const code = data.country_calling_code;
+          const country = data.country_name;
+          if (code && phoneInput) {
+            phoneInput.value = code + ' ';
+          }
+          const countrySelect = document.getElementById('country');
+          if (countrySelect) {
+            for (let opt of countrySelect.options) {
+              if (opt.text.toLowerCase().includes(country.toLowerCase())) {
+                opt.selected = true;
+                break;
+              }
+            }
+          }
+        });
+    };
+
+    function selectLanguage(lang) {
+      userLanguage = lang;
+      document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      document.getElementById('page-language').classList.add('hidden');
+      document.getElementById(lang === 'en' ? 'page-role-en' : 'page-role-ar').classList.remove('hidden');
+    }
+
+    function selectRole(lang, role) {
+      userRole = role;
+      document.getElementById(lang === 'en' ? 'page-role-en' : 'page-role-ar').classList.add('hidden');
+      document.getElementById('page-create-account').classList.remove('hidden');
+    }
+
+    function validateAndContinue() {
+      let fields = ['name', 'age', 'email', 'phone', 'country'];
+      for (let id of fields) {
+        if (!document.getElementById(id).value) {
+          alert('Please fill all required fields.');
+          return;
+        }
+      }
+      document.getElementById('page-create-account').classList.add('hidden');
+      document.getElementById('page-medications').classList.remove('hidden');
+    }
 
     document.getElementById('medication-form').addEventListener('submit', function(e) {
       e.preventDefault();
@@ -147,7 +217,6 @@
       setInterval(() => {
         const now = new Date();
         const currentTime = now.toTimeString().slice(0,5);
-
         medications.forEach((med, index) => {
           if (med.time === currentTime && med.status === "pending") {
             currentAlertIndex = index;
@@ -171,13 +240,12 @@
     function snoozeDose() {
       if (currentAlertIndex !== null) {
         snoozedDose = currentAlertIndex;
-        medications[currentAlertIndex].snoozeUntil = Date.now() + (10 * 60000);
+        medications[snoozedDose].snoozeUntil = Date.now() + (10 * 60000);
         document.getElementById('notification-box').style.display = 'none';
         setTimeout(() => {
           if (medications[snoozedDose].status !== "taken") {
             medications[snoozedDose].status = "missed";
             alert(`❌ Missed dose: ${medications[snoozedDose].name}`);
-            // Here you can connect to send a notification to family
           }
         }, 10 * 60000);
         currentAlertIndex = null;
@@ -185,9 +253,7 @@
     }
 
     function showSummary() {
-      let table = `<table id='summary-table'>
-        <tr><th>Day</th><th>Name</th><th>Dose</th><th>Time</th><th>Status</th></tr>`;
-
+      let table = `<table><tr><th>Day</th><th>Name</th><th>Dose</th><th>Time</th><th>Status</th></tr>`;
       const today = new Date().toLocaleDateString();
       medications.forEach(med => {
         table += `<tr>
