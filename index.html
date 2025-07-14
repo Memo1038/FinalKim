@@ -9,8 +9,7 @@
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: url('https://i.imgur.com/jMWZIJO.jpg') no-repeat center center fixed;
-      background-size: cover;
+      background-color: #f4f7f9;
       color: #0D47A1;
       display: flex;
       flex-direction: column;
@@ -18,7 +17,6 @@
       justify-content: center;
       min-height: 100vh;
       padding: 20px;
-      backdrop-filter: brightness(0.9);
     }
 
     h1 {
@@ -37,8 +35,8 @@
 
     .icon-btn {
       display: block;
-      width: 90%;
-      max-width: 300px;
+      width: 100%;
+      max-width: 400px;
       padding: 15px;
       margin: 10px auto;
       font-size: 1.1em;
@@ -51,13 +49,15 @@
     }
 
     input, select {
-      width: 90%;
-      max-width: 300px;
-      padding: 10px;
+      width: 100%;
+      max-width: 400px;
+      padding: 15px;
       margin: 10px auto;
       display: block;
       border-radius: 5px;
       border: 1px solid #ccc;
+      font-size: 1em;
+      box-sizing: border-box;
     }
 
     .hidden { display: none; }
@@ -92,7 +92,10 @@
     <input type="text" id="name" placeholder="Name / الاسم" required>
     <input type="number" id="age" placeholder="Age / العمر" required>
     <input type="email" id="email" placeholder="Email / البريد الإلكتروني" required>
-    <input type="tel" id="phone" placeholder="Phone Number / رقم الهاتف" readonly required>
+    <div style="position: relative; width: 100%; max-width: 400px; margin: 0 auto;">
+      <span id="phone-code" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #333;">+20</span>
+      <input type="tel" id="phone" placeholder="Phone Number / رقم الهاتف" style="padding-left: 60px;" required>
+    </div>
     <select id="country" disabled required>
       <option value="Egypt" selected>Egypt</option>
     </select>
@@ -132,8 +135,8 @@
       fetch('https://ipapi.co/json/')
         .then(response => response.json())
         .then(data => {
-          const countryCode = data.country_calling_code || '+20';
-          document.getElementById('phone').value = countryCode + ' ';
+          const code = data.country_calling_code || '+20';
+          document.getElementById('phone-code').textContent = code;
         });
     };
 
@@ -154,7 +157,7 @@
       const name = document.getElementById('name').value;
       const age = document.getElementById('age').value;
       const email = document.getElementById('email').value;
-      const phone = document.getElementById('phone').value;
+      const phone = document.getElementById('phone-code').textContent + ' ' + document.getElementById('phone').value;
       const country = document.getElementById('country').value;
 
       if (!name || !age || !email || !phone || !country) {
@@ -189,7 +192,6 @@
 
       scheduleNotification(name, time);
 
-      // clear input fields
       document.getElementById('med-name').value = '';
       document.getElementById('med-dose').value = '';
       document.getElementById('med-indication').value = '';
@@ -213,7 +215,7 @@
           if (currentH === targetH && currentM === targetM) {
             new Notification(`⏰ Time to take: ${medName}`);
           }
-        }, 60000); // check every minute
+        }, 60000);
 
         scheduledNotifications.push(checkInterval);
       });
