@@ -42,7 +42,6 @@
     .hidden { display: none; }
     table {
       width: 100%;
-      max-width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
     }
@@ -54,6 +53,25 @@
     th {
       background: #e1f5fe;
     }
+    .phone-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      max-width: 400px;
+      margin: 10px auto;
+    }
+    .phone-prefix {
+      background-color: #ddd;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-right: none;
+      border-radius: 6px 0 0 6px;
+      font-size: 1em;
+    }
+    #phone {
+      border-radius: 0 6px 6px 0;
+      border-left: none;
+    }
   </style>
 </head>
 <body>
@@ -63,7 +81,10 @@
     <input type="text" id="name" placeholder="Full Name" required>
     <input type="number" id="age" placeholder="Age" required>
     <input type="email" id="email" placeholder="Email" required>
-    <input type="tel" id="phone" placeholder="Phone Number" required>
+    <div class="phone-wrapper">
+      <div class="phone-prefix" id="prefix">+20</div>
+      <input type="tel" id="phone" placeholder="Phone Number" required>
+    </div>
     <select id="country" required>
       <option value="">Select Country</option>
       <option value="Egypt">Egypt</option>
@@ -93,13 +114,15 @@
   <script>
     let userName = "";
 
+    // Auto-fill prefix & country
     window.onload = () => {
       fetch('https://ipapi.co/json/')
         .then(res => res.json())
         .then(data => {
-          const phone = document.getElementById('phone');
+          const prefix = data.country_calling_code || "+20";
+          document.getElementById("prefix").innerText = prefix;
+
           const countrySelect = document.getElementById('country');
-          if (phone) phone.value = (data.country_calling_code || '') + ' ';
           if (countrySelect && data.country_name) {
             for (let option of countrySelect.options) {
               if (option.text.toLowerCase().includes(data.country_name.toLowerCase())) {
@@ -138,28 +161,28 @@
       const time = document.getElementById('med-time').value;
       const repeat = document.getElementById('med-repeat').value;
 
-      if (repeat === 'weekly') {
-        let table = `<table><tr><th>Day</th><th>Date</th><th>Time</th><th>Name</th><th>Dose</th><th>Drug Used For</th><th>Status</th></tr>`;
-        const now = new Date();
-        const [h, m] = time.split(':').map(Number);
+      let table = `<table><tr><th>Day</th><th>Date</th><th>Time</th><th>Name</th><th>Dose</th><th>Drug Used For</th><th>Status</th></tr>`;
+      const now = new Date();
+      const [h, m] = time.split(':').map(Number);
 
-        for (let i = 0; i < 4; i++) {
-          const date = new Date(now.getTime());
-          date.setDate(now.getDate() + i * 7);
-          date.setHours(h, m, 0, 0);
-          const dateStr = date.toISOString().split('T')[0];
-          const day = date.toLocaleDateString('en-US', { weekday: 'long' });
-
-          table += `<tr><td>${day}</td><td>${dateStr}</td><td>${time}</td><td>${name}</td><td>${dose}</td><td>${indication}</td><td>⏳ Pending</td></tr>`;
+      for (let i = 0; i < 4; i++) {
+        const date = new Date(now);
+        if (repeat === "daily") {
+          date.setDate(now.getDate() + i);
+        } else {
+          date.setDate(now.getDate() + (i * 7));
         }
+        date.setHours(h, m, 0, 0);
+        const dateStr = date.toISOString().split('T')[0];
+        const day = date.toLocaleDateString('en-US', { weekday: 'long' });
 
-        table += '</table>';
-        document.getElementById("med-summary").innerHTML += table;
-      } else {
-        alert("Only weekly medication schedule is supported in this version.");
+        table += `<tr><td>${day}</td><td>${dateStr}</td><td>${time}</td><td>${name}</td><td>${dose}</td><td>${indication}</td><td>⏳ Pending</td></tr>`;
       }
 
-      // clear fields
+      table += '</table>';
+      document.getElementById("med-summary").innerHTML += table;
+
+      // Clear inputs
       document.getElementById('med-name').value = '';
       document.getElementById('med-dose').value = '';
       document.getElementById('med-indication').value = '';
