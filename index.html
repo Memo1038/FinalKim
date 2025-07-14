@@ -1,16 +1,16 @@
+<!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DosiThink</title>
-  <script src="https://apis.google.com/js/platform.js" async defer></script>
-  <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
   <script src="https://ipapi.co/json/" async defer></script>
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #ffffff;
+      background: url('https://i.imgur.com/jMWZIJO.jpg') no-repeat center center fixed;
+      background-size: cover;
       color: #0D47A1;
       display: flex;
       flex-direction: column;
@@ -18,16 +18,23 @@
       justify-content: center;
       min-height: 100vh;
       padding: 20px;
+      backdrop-filter: brightness(0.9);
     }
+
     h1 {
       font-size: 2.5em;
       font-weight: bold;
+      text-align: center;
+      width: 100%;
     }
+
     h2 {
       font-size: 1.2em;
       color: #607D8B;
       margin-bottom: 30px;
+      text-align: center;
     }
+
     .icon-btn {
       display: block;
       width: 90%;
@@ -42,6 +49,7 @@
       border: none;
       cursor: pointer;
     }
+
     input, select {
       width: 90%;
       max-width: 300px;
@@ -51,10 +59,15 @@
       border-radius: 5px;
       border: 1px solid #ccc;
     }
+
     .hidden { display: none; }
     .medication-form { margin-top: 20px; }
-    .social-buttons { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 20px; }
     .rtl { direction: rtl; text-align: right; }
+    #summary-btn {
+      background-color: #4A90E2;
+      color: white;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
@@ -79,22 +92,16 @@
     <input type="text" id="name" placeholder="Name / الاسم" required>
     <input type="number" id="age" placeholder="Age / العمر" required>
     <input type="email" id="email" placeholder="Email / البريد الإلكتروني" required>
-    <input type="tel" id="phone" placeholder="Phone Number / رقم الهاتف" required>
-    <select id="country" required>
-      <option value="">Select Country / اختر الدولة</option>
-      <option value="Egypt">Egypt</option>
-      <option value="Saudi Arabia">Saudi Arabia</option>
-      <option value="UAE">UAE</option>
-      <option value="Other">Other</option>
+    <input type="tel" id="phone" placeholder="Phone Number / رقم الهاتف" readonly required>
+    <select id="country" disabled required>
+      <option value="Egypt" selected>Egypt</option>
     </select>
     <button class="icon-btn" onclick="validateAndContinue()">Next / التالي</button>
   </div>
 
-  <div id="page-social-login" class="hidden">
-    <h2 id="google-login-label">Sign up using Google:</h2>
-    <div class="social-buttons">
-      <div class="g-signin2" data-onsuccess="onGoogleSignIn"></div>
-    </div>
+  <div id="page-home" class="hidden">
+    <h2>Welcome / مرحباً</h2>
+    <button class="icon-btn" onclick="goToMedicationsPage()">My Medications / أدويتي</button>
   </div>
 
   <div id="page-medications" class="hidden">
@@ -110,6 +117,7 @@
       </select>
       <button class="icon-btn" type="submit">Add Medication / أضف دواء</button>
     </form>
+    <button id="summary-btn" class="icon-btn" onclick="showSummary()">📋 View My Medication Summary</button>
     <ul id="medication-list"></ul>
   </div>
 
@@ -124,30 +132,14 @@
       fetch('https://ipapi.co/json/')
         .then(response => response.json())
         .then(data => {
-          const countryCode = data.country_calling_code || '';
-          const country = data.country_name || '';
-
-          const phoneInput = document.getElementById('phone');
-          if (countryCode && phoneInput) {
-            phoneInput.value = countryCode + ' ';
-          }
-
-          const countrySelect = document.getElementById('country');
-          if (countrySelect) {
-            for (let option of countrySelect.options) {
-              if (option.text.toLowerCase().includes(country.toLowerCase())) {
-                option.selected = true;
-                break;
-              }
-            }
-          }
+          const countryCode = data.country_calling_code || '+20';
+          document.getElementById('phone').value = countryCode + ' ';
         });
     };
 
     function selectLanguage(lang) {
       userLanguage = lang;
       document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
-      document.getElementById('google-login-label').innerText = lang === 'ar' ? 'التسجيل عن طريق جوجل' : 'Sign up using Google:';
       document.getElementById('page-language').classList.add('hidden');
       document.getElementById(lang === 'en' ? 'page-role-en' : 'page-role-ar').classList.remove('hidden');
     }
@@ -172,37 +164,12 @@
 
       userData = { name, age, email, phone, country };
       document.getElementById('page-create-account').classList.add('hidden');
-      document.getElementById('page-social-login').classList.remove('hidden');
+      document.getElementById('page-home').classList.remove('hidden');
     }
 
-    function onGoogleSignIn(googleUser) {
-      const profile = googleUser.getBasicProfile();
-      const provider = 'Google';
-      const email = profile.getEmail();
-
-      completeSignup(email, provider);
-    }
-
-    function completeSignup(email, provider) {
-      document.getElementById('page-social-login').classList.add('hidden');
+    function goToMedicationsPage() {
+      document.getElementById('page-home').classList.add('hidden');
       document.getElementById('page-medications').classList.remove('hidden');
-
-      const timestamp = new Date().toISOString();
-
-      const data = {
-        ...userData,
-        email: email,
-        provider: provider,
-        role: userRole,
-        time: timestamp
-      };
-
-      console.log("Send to Google Sheets:", data);
-
-      if (userRole === 'family') {
-        const patientId = prompt("Enter your patient's email to connect accounts:");
-        console.log(`Family linked to patient: ${patientId}`);
-      }
     }
 
     document.getElementById('medication-form').addEventListener('submit', function(e) {
@@ -213,12 +180,21 @@
       const time = document.getElementById('med-time').value;
       const repeat = document.getElementById('med-repeat').value;
 
-      medications.push({ name, dose, indication, time, repeat });
+      const med = { name, dose, indication, time, repeat };
+      medications.push(med);
+
       const li = document.createElement('li');
       li.innerText = `${name} - ${dose} - ${indication} @ ${time} (${repeat})`;
       document.getElementById('medication-list').appendChild(li);
 
       scheduleNotification(name, time);
+
+      // clear input fields
+      document.getElementById('med-name').value = '';
+      document.getElementById('med-dose').value = '';
+      document.getElementById('med-indication').value = '';
+      document.getElementById('med-time').value = '';
+      document.getElementById('med-repeat').value = 'daily';
     });
 
     function scheduleNotification(medName, timeStr) {
@@ -227,26 +203,33 @@
       Notification.requestPermission().then(permission => {
         if (permission !== "granted") return;
 
-        const now = new Date();
-        const [h, m] = timeStr.split(":").map(Number);
-        const target = new Date();
-        target.setHours(h);
-        target.setMinutes(m);
-        target.setSeconds(0);
-        target.setMilliseconds(0);
+        const [targetH, targetM] = timeStr.split(":").map(Number);
 
-        if (target < now) {
-          target.setDate(target.getDate() + 1);
-        }
+        const checkInterval = setInterval(() => {
+          const now = new Date();
+          const currentH = now.getHours();
+          const currentM = now.getMinutes();
 
-        const delay = target.getTime() - now.getTime();
+          if (currentH === targetH && currentM === targetM) {
+            new Notification(`⏰ Time to take: ${medName}`);
+          }
+        }, 60000); // check every minute
 
-        const timeoutId = setTimeout(() => {
-          new Notification(`Time to take: ${medName}`);
-        }, delay);
-
-        scheduledNotifications.push(timeoutId);
+        scheduledNotifications.push(checkInterval);
       });
+    }
+
+    function showSummary() {
+      if (medications.length === 0) {
+        alert("No medications added yet.");
+        return;
+      }
+
+      let summary = "📋 Medication Summary:\n\n";
+      medications.forEach((med, i) => {
+        summary += `${i + 1}. ${med.name} - ${med.dose} - ${med.indication} @ ${med.time} (${med.repeat})\n`;
+      });
+      alert(summary);
     }
   </script>
 </body>
