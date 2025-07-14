@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>DosiThink</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -114,7 +114,6 @@
   <script>
     let userName = "";
 
-    // Auto-fill prefix & country
     window.onload = () => {
       fetch('https://ipapi.co/json/')
         .then(res => res.json())
@@ -167,11 +166,7 @@
 
       for (let i = 0; i < 4; i++) {
         const date = new Date(now);
-        if (repeat === "daily") {
-          date.setDate(now.getDate() + i);
-        } else {
-          date.setDate(now.getDate() + (i * 7));
-        }
+        date.setDate(now.getDate() + (repeat === "daily" ? i : i * 7));
         date.setHours(h, m, 0, 0);
         const dateStr = date.toISOString().split('T')[0];
         const day = date.toLocaleDateString('en-US', { weekday: 'long' });
