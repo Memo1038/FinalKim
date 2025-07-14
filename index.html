@@ -215,14 +215,15 @@
         const now = new Date();
         const delay = scheduled.getTime() - now.getTime();
 
-        if (delay > 0) {
-          setTimeout(() => {
-            new Notification(`Time to take ${name}`, {
-              body: `Dose: ${dose}\nUse: ${usedFor}`
-            });
-            document.getElementById("alarmSound").play();
-          }, delay);
-        }
+        if (delay <= 0) return; // ✅ Don't notify if it's past
+
+        setTimeout(() => {
+          const msg = `It's time to take: ${name} (${dose})`;
+          new Notification(msg, {
+            body: `Use: ${usedFor}`
+          });
+          document.getElementById("alarmSound").play();
+        }, delay);
       });
     }
   </script>
