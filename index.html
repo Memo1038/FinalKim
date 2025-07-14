@@ -6,225 +6,260 @@
   <title>DosiThink</title>
   <style>
     body {
-      margin: 0;
       font-family: Arial, sans-serif;
-      background: #f9f9f9;
-      color: #0D47A1;
+      background: #f4f4f4;
       padding: 20px;
     }
-    h1, h2, h3 {
+    h1, h2 {
       text-align: center;
+      color: #0D47A1;
     }
-    input, select {
-      width: 95%;
+    input, select, button {
+      width: 100%;
       max-width: 400px;
-      padding: 14px;
       margin: 10px auto;
       display: block;
+      padding: 12px;
       font-size: 1em;
       border-radius: 5px;
       border: 1px solid #ccc;
       box-sizing: border-box;
     }
-    button {
-      display: block;
-      margin: 15px auto;
-      padding: 12px 20px;
-      background: #4A90E2;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-size: 1em;
-      cursor: pointer;
-    }
     table {
       width: 100%;
-      margin-top: 20px;
       border-collapse: collapse;
+      margin-top: 20px;
       background: white;
     }
     th, td {
-      border: 1px solid #ccc;
       padding: 10px;
+      border: 1px solid #ccc;
       text-align: center;
     }
     .hidden {
       display: none;
     }
-    .flex-input {
+    .phone-container {
       display: flex;
-      align-items: center;
-      justify-content: center;
       max-width: 400px;
-      margin: 0 auto;
+      margin: auto;
     }
-    .prefix {
-      background: #eee;
-      padding: 14px 10px;
+    .phone-container span {
+      background: #ddd;
+      padding: 12px;
       border: 1px solid #ccc;
       border-right: none;
       border-radius: 5px 0 0 5px;
     }
-    .phone-input {
+    .phone-container input {
       flex: 1;
-      border-left: none;
       border-radius: 0 5px 5px 0;
+      border-left: none;
+    }
+    #medication-popup {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      color: white;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      text-align: center;
+      padding: 20px;
+    }
+    #medication-popup button {
+      width: 150px;
+      margin: 10px;
     }
   </style>
 </head>
 <body>
+  <h1>DosiThink</h1>
+  <h2>Because Every Dose Matters</h2>
 
-  <div id="signup">
-    <h1>DosiThink</h1>
-    <h3>Because Every Dose Matters</h3>
-    <input type="text" id="name" placeholder="Name" required>
-    <input type="number" id="age" placeholder="Age" required>
-    <input type="email" id="email" placeholder="Email" required>
-
-    <div class="flex-input">
-      <span id="country-code" class="prefix">+XX</span>
-      <input type="tel" id="phone" placeholder="Phone Number" class="phone-input" required>
+  <div id="form-section">
+    <input type="text" id="name" placeholder="Name" required />
+    <input type="number" id="age" placeholder="Age" required />
+    <input type="email" id="email" placeholder="Email" required />
+    <div class="phone-container">
+      <span id="country-code">+XX</span>
+      <input type="tel" id="phone" placeholder="Phone Number" required />
     </div>
-
-    <select id="country" required>
-      <option value="">Detecting country...</option>
-    </select>
-
-    <button onclick="startApp()">Next</button>
+    <select id="country" required><option value="">Detecting...</option></select>
+    <button onclick="submitUser()">Start</button>
   </div>
 
   <div id="medication-section" class="hidden">
-    <h2 id="welcome-user"></h2>
+    <h2 id="welcome-name"></h2>
     <form id="med-form">
-      <input type="text" id="med-name" placeholder="Drug Name" required>
-      <input type="text" id="med-dose" placeholder="Dose" required>
-      <input type="text" id="med-use" placeholder="Drug Used For / دواء علاج" required>
-      <input type="time" id="med-time" required>
+      <input type="text" id="med-name" placeholder="Drug Name" required />
+      <input type="text" id="med-dose" placeholder="Dose" required />
+      <input type="text" id="med-used" placeholder="Drug Used For / دواء علاج" required />
+      <input type="time" id="med-time" required />
       <select id="med-repeat">
         <option value="daily">Daily</option>
         <option value="weekly">Weekly</option>
       </select>
       <button type="submit">Add Medication</button>
     </form>
-    <div id="med-table-container"></div>
+    <div id="table-container"></div>
+  </div>
+
+  <!-- FULLSCREEN NOTIFICATION POPUP -->
+  <div id="medication-popup">
+    <h2 id="popup-title"></h2>
+    <p id="popup-details"></p>
+    <button onclick="markAsTaken()">✅ Taken</button>
+    <button onclick="snoozeReminder()">⏰ Snooze 10 mins</button>
   </div>
 
   <audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
 
   <script>
-    let userData = {};
-    let medications = [];
+    let user = {};
+    let meds = [];
+    let snoozeTimers = {};
+    let activeDoseIndex = null;
 
     window.onload = () => {
-      fetch('https://ipapi.co/json/')
+      fetch("https://ipapi.co/json")
         .then(res => res.json())
         .then(data => {
-          const code = data.country_calling_code || '+XX';
-          const countryName = data.country_name || 'Unknown';
-
-          document.getElementById('country-code').innerText = code;
-          document.getElementById('country').innerHTML = `<option selected>${countryName}</option>`;
+          document.getElementById("country-code").innerText = data.country_calling_code || "+XX";
+          document.getElementById("country").innerHTML = `<option selected>${data.country_name}</option>`;
         });
     };
 
-    function startApp() {
-      const name = document.getElementById('name').value;
-      const age = document.getElementById('age').value;
-      const email = document.getElementById('email').value;
-      const phone = document.getElementById('phone').value;
-      const code = document.getElementById('country-code').innerText;
-      const country = document.getElementById('country').value;
+    function submitUser() {
+      const name = document.getElementById("name").value;
+      const age = document.getElementById("age").value;
+      const email = document.getElementById("email").value;
+      const phone = document.getElementById("phone").value;
+      const fullPhone = document.getElementById("country-code").innerText + " " + phone;
+      const country = document.getElementById("country").value;
 
       if (!name || !age || !email || !phone || !country) {
-        alert("Please fill in all fields.");
+        alert("Please fill in all fields");
         return;
       }
 
-      userData = { name, age, email, phone: code + ' ' + phone, country };
-      document.getElementById('signup').classList.add('hidden');
-      document.getElementById('medication-section').classList.remove('hidden');
-      document.getElementById('welcome-user').innerText = "Welcome Mr. " + name;
+      user = { name, age, email, phone: fullPhone, country };
+      document.getElementById("form-section").classList.add("hidden");
+      document.getElementById("medication-section").classList.remove("hidden");
+      document.getElementById("welcome-name").innerText = `Welcome Mr. ${name}`;
     }
 
-    document.getElementById('med-form').addEventListener('submit', function(e) {
+    document.getElementById("med-form").addEventListener("submit", function (e) {
       e.preventDefault();
-      const name = document.getElementById('med-name').value;
-      const dose = document.getElementById('med-dose').value;
-      const usedFor = document.getElementById('med-use').value;
-      const time = document.getElementById('med-time').value;
-      const repeat = document.getElementById('med-repeat').value;
+      const name = document.getElementById("med-name").value;
+      const dose = document.getElementById("med-dose").value;
+      const used = document.getElementById("med-used").value;
+      const time = document.getElementById("med-time").value;
+      const repeat = document.getElementById("med-repeat").value;
 
       const today = new Date();
       const schedule = [];
 
       for (let i = 0; i < 30; i++) {
         const date = new Date(today);
-        if (repeat === 'daily') {
-          date.setDate(today.getDate() + i);
-        } else if (repeat === 'weekly') {
-          date.setDate(today.getDate() + (i * 7));
-        }
-
-        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-        const dateStr = date.toISOString().split('T')[0];
-
-        schedule.push({ day: dayName, date: dateStr, time, name, dose, usedFor, status: "⏳ Pending" });
-        scheduleNotification(name, dose, usedFor, date, time);
+        if (repeat === "daily") date.setDate(today.getDate() + i);
+        if (repeat === "weekly") date.setDate(today.getDate() + (i * 7));
+        const day = date.toLocaleDateString("en-US", { weekday: "long" });
+        const dateStr = date.toISOString().split("T")[0];
+        schedule.push({ day, date: dateStr, time, name, dose, used, status: "⏳ Pending" });
       }
 
-      medications = medications.concat(schedule);
+      schedule.forEach((entry, index) => {
+        const realIndex = meds.length + index;
+        setReminder(entry, realIndex);
+      });
+
+      meds.push(...schedule);
       renderTable();
-      document.getElementById('med-form').reset();
+      document.getElementById("med-form").reset();
     });
 
     function renderTable() {
-      const container = document.getElementById('med-table-container');
-      container.innerHTML = '<h3>Medication Schedule</h3>';
-      const table = document.createElement('table');
+      const container = document.getElementById("table-container");
+      container.innerHTML = "<h3>Monthly Medication Table</h3>";
+      const table = document.createElement("table");
       table.innerHTML = `
-        <tr>
-          <th>Day</th><th>Date</th><th>Time</th><th>Name</th>
-          <th>Dose</th><th>Used For</th><th>Status</th>
-        </tr>
-      `;
-      medications.forEach((med, index) => {
-        const row = document.createElement('tr');
+        <tr><th>Day</th><th>Date</th><th>Time</th><th>Name</th><th>Dose</th><th>Indication</th><th>Status</th></tr>`;
+      meds.forEach((m, i) => {
+        const row = document.createElement("tr");
         row.innerHTML = `
-          <td>${med.day}</td>
-          <td>${med.date}</td>
-          <td>${med.time}</td>
-          <td>${med.name}</td>
-          <td>${med.dose}</td>
-          <td>${med.usedFor}</td>
-          <td id="status-${index}">${med.status}</td>
-        `;
+          <td>${m.day}</td>
+          <td>${m.date}</td>
+          <td>${m.time}</td>
+          <td>${m.name}</td>
+          <td>${m.dose}</td>
+          <td>${m.used}</td>
+          <td id="status-${i}">${m.status}</td>`;
         table.appendChild(row);
       });
       container.appendChild(table);
     }
 
-    function scheduleNotification(name, dose, usedFor, date, timeStr) {
-      if (!("Notification" in window)) return;
+    function setReminder(entry, index) {
+      const [h, m] = entry.time.split(":").map(Number);
+      const scheduled = new Date(entry.date);
+      scheduled.setHours(h, m, 0, 0);
+      const now = new Date();
+      const delay = scheduled.getTime() - now.getTime();
 
-      Notification.requestPermission().then(permission => {
-        if (permission !== "granted") return;
+      if (delay <= 0) return;
 
-        const [h, m] = timeStr.split(":").map(Number);
-        const scheduled = new Date(date);
-        scheduled.setHours(h, m, 0, 0);
-        const now = new Date();
-        const delay = scheduled.getTime() - now.getTime();
+      setTimeout(() => {
+        activeDoseIndex = index;
+        showPopup(entry.name, entry.dose, entry.used);
+        meds[index].status = "🔔 Awaiting Confirmation";
+        renderTable();
 
-        if (delay <= 0) return; // ✅ Don't notify if it's past
+        snoozeTimers[index] = setTimeout(() => {
+          if (meds[index].status === "🔔 Awaiting Confirmation") {
+            meds[index].status = "❌ Missed";
+            renderTable();
+            closePopup();
+          }
+        }, 10 * 60 * 1000); // 10 minutes
+      }, delay);
+    }
 
-        setTimeout(() => {
-          const msg = `It's time to take: ${name} (${dose})`;
-          new Notification(msg, {
-            body: `Use: ${usedFor}`
-          });
-          document.getElementById("alarmSound").play();
-        }, delay);
-      });
+    function showPopup(name, dose, used) {
+      document.getElementById("popup-title").innerText = `Time to take ${name}`;
+      document.getElementById("popup-details").innerText = `Dose: ${dose} - For: ${used}`;
+      document.getElementById("alarmSound").play();
+      document.getElementById("medication-popup").style.display = "flex";
+    }
+
+    function closePopup() {
+      document.getElementById("medication-popup").style.display = "none";
+    }
+
+    function markAsTaken() {
+      if (activeDoseIndex !== null) {
+        meds[activeDoseIndex].status = "✅ Taken";
+        renderTable();
+        clearTimeout(snoozeTimers[activeDoseIndex]);
+        closePopup();
+      }
+    }
+
+    function snoozeReminder() {
+      if (activeDoseIndex !== null) {
+        clearTimeout(snoozeTimers[activeDoseIndex]);
+        snoozeTimers[activeDoseIndex] = setTimeout(() => {
+          if (meds[activeDoseIndex].status === "🔔 Awaiting Confirmation") {
+            meds[activeDoseIndex].status = "❌ Missed";
+            renderTable();
+            closePopup();
+          }
+        }, 10 * 60 * 1000);
+        closePopup();
+      }
     }
   </script>
 </body>
