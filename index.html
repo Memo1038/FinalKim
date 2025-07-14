@@ -24,6 +24,7 @@
       font-size: 1em;
       border-radius: 5px;
       border: 1px solid #ccc;
+      box-sizing: border-box;
     }
     button {
       display: block;
@@ -50,6 +51,25 @@
     .hidden {
       display: none;
     }
+    .flex-input {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    .prefix {
+      background: #eee;
+      padding: 14px 10px;
+      border: 1px solid #ccc;
+      border-right: none;
+      border-radius: 5px 0 0 5px;
+    }
+    .phone-input {
+      flex: 1;
+      border-left: none;
+      border-radius: 0 5px 5px 0;
+    }
   </style>
 </head>
 <body>
@@ -60,8 +80,16 @@
     <input type="text" id="name" placeholder="Name" required>
     <input type="number" id="age" placeholder="Age" required>
     <input type="email" id="email" placeholder="Email" required>
-    <input type="tel" id="phone" placeholder="Phone Number" readonly required>
-    <select id="country" disabled><option>Detecting country...</option></select>
+
+    <div class="flex-input">
+      <span id="country-code" class="prefix">+XX</span>
+      <input type="tel" id="phone" placeholder="Phone Number" class="phone-input" required>
+    </div>
+
+    <select id="country" required>
+      <option value="">Detecting country...</option>
+    </select>
+
     <button onclick="startApp()">Next</button>
   </div>
 
@@ -87,18 +115,24 @@
     let userData = {};
     let medications = [];
 
-    fetch('https://ipapi.co/json/')
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById('phone').value = data.country_calling_code + ' ';
-        document.getElementById('country').innerHTML = '<option>' + data.country_name + '</option>';
-      });
+    window.onload = () => {
+      fetch('https://ipapi.co/json/')
+        .then(res => res.json())
+        .then(data => {
+          const code = data.country_calling_code || '+XX';
+          const countryName = data.country_name || 'Unknown';
+
+          document.getElementById('country-code').innerText = code;
+          document.getElementById('country').innerHTML = `<option selected>${countryName}</option>`;
+        });
+    };
 
     function startApp() {
       const name = document.getElementById('name').value;
       const age = document.getElementById('age').value;
       const email = document.getElementById('email').value;
       const phone = document.getElementById('phone').value;
+      const code = document.getElementById('country-code').innerText;
       const country = document.getElementById('country').value;
 
       if (!name || !age || !email || !phone || !country) {
@@ -106,7 +140,7 @@
         return;
       }
 
-      userData = { name, age, email, phone, country };
+      userData = { name, age, email, phone: code + ' ' + phone, country };
       document.getElementById('signup').classList.add('hidden');
       document.getElementById('medication-section').classList.remove('hidden');
       document.getElementById('welcome-user').innerText = "Welcome Mr. " + name;
@@ -128,14 +162,13 @@
         if (repeat === 'daily') {
           date.setDate(today.getDate() + i);
         } else if (repeat === 'weekly') {
-          date.setDate(today.getDate() + i * 7);
+          date.setDate(today.getDate() + (i * 7));
         }
 
         const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
         const dateStr = date.toISOString().split('T')[0];
 
         schedule.push({ day: dayName, date: dateStr, time, name, dose, usedFor, status: "⏳ Pending" });
-
         scheduleNotification(name, dose, usedFor, date, time);
       }
 
