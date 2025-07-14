@@ -9,6 +9,7 @@
       font-family: Arial, sans-serif;
       background: #f4f4f4;
       padding: 20px;
+      margin: 0;
     }
     h1, h2 {
       text-align: center;
@@ -37,6 +38,9 @@
       border: 1px solid #ccc;
       border-right: none;
       border-radius: 5px 0 0 5px;
+      min-width: 70px;
+      text-align: center;
+      user-select: none;
     }
     .phone-container input {
       flex: 1;
@@ -57,12 +61,12 @@
   <h2>Because Every Dose Matters</h2>
 
   <div id="form-section">
-    <input type="text" id="name" placeholder="Name" required />
-    <input type="number" id="age" placeholder="Age" required />
-    <input type="email" id="email" placeholder="Email" required />
+    <input type="text" id="name" placeholder="Name / الاسم" required />
+    <input type="number" id="age" placeholder="Age / العمر" required />
+    <input type="email" id="email" placeholder="Email / البريد الإلكتروني" required />
     <div class="phone-container">
       <span id="country-code">+XX</span>
-      <input type="tel" id="phone" placeholder="Phone Number" required />
+      <input type="tel" id="phone" placeholder="Phone Number / رقم الهاتف" required />
     </div>
     <select id="country" required><option value="">Detecting...</option></select>
     <button onclick="submitUser()">Start</button>
@@ -71,13 +75,13 @@
   <div id="medication-section" class="hidden">
     <h2 id="welcome-name"></h2>
     <form id="med-form">
-      <input type="text" id="med-name" placeholder="Drug Name" required />
-      <input type="text" id="med-dose" placeholder="Dose" required />
+      <input type="text" id="med-name" placeholder="Drug Name / اسم الدواء" required />
+      <input type="text" id="med-dose" placeholder="Dose / الجرعة" required />
       <input type="text" id="med-used" placeholder="Drug Used For / دواء علاج" required />
       <input type="time" id="med-time" required />
       <select id="med-repeat">
-        <option value="daily">Daily</option>
-        <option value="weekly">Weekly</option>
+        <option value="daily">Daily / يومي</option>
+        <option value="weekly">Weekly / أسبوعي</option>
       </select>
       <button type="submit">Add Medication</button>
     </form>
@@ -88,16 +92,21 @@
     let user = {};
     let meds = [];
 
+    // Auto-detect country and code
     window.onload = () => {
-      fetch("https://ipapi.co/json")
+      fetch("https://ipapi.co/json/")
         .then(res => res.json())
         .then(data => {
-          document.getElementById("country-code").innerText = data.country_calling_code || "+XX";
-          document.getElementById("country").innerHTML = `<option selected>${data.country_name}</option>`;
+          const callingCode = data.country_calling_code || "+XX";
+          const countryName = data.country_name || "Unknown";
+
+          document.getElementById("country-code").innerText = callingCode;
+          document.getElementById("country").innerHTML = `<option selected>${countryName}</option>`;
         });
     };
 
-    function https://script.google.com/macros/s/AKfycbw-04h25FGdrMO69dEhupzAN7FhJqDx861shHYFf5kEyuC6aOXb_J_Aq54gfVoftLEK_g/exec
+    // Submit user info and send to Google Sheet
+    function submitUser() {
       const name = document.getElementById("name").value;
       const age = document.getElementById("age").value;
       const email = document.getElementById("email").value;
@@ -111,11 +120,28 @@
       }
 
       user = { name, age, email, phone: fullPhone, country };
+
+      fetch("https://script.google.com/macros/s/AKfycbw-04h25FGdrMO69dEhupzAN7FhJqDx861shHYFf5kEyuC6aOXb_J_Aq54gfVoftLEK_g/exec", {
+        method: "POST",
+        body: JSON.stringify(user),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+      .then(res => res.text())
+      .then(response => {
+        console.log("✅ Data sent to Google Sheets:", response);
+      })
+      .catch(err => {
+        console.error("❌ Error sending to Google Sheets:", err);
+      });
+
       document.getElementById("form-section").classList.add("hidden");
       document.getElementById("medication-section").classList.remove("hidden");
       document.getElementById("welcome-name").innerText = `Welcome Mr. ${name}`;
     }
 
+    // Medication form submit
     document.getElementById("med-form").addEventListener("submit", function (e) {
       e.preventDefault();
       const name = document.getElementById("med-name").value;
@@ -150,3 +176,4 @@
   </script>
 </body>
 </html>
+
