@@ -25,17 +25,6 @@
       border: 1px solid #ccc;
       box-sizing: border-box;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background: white;
-    }
-    th, td {
-      padding: 10px;
-      border: 1px solid #ccc;
-      text-align: center;
-    }
     .hidden { display: none; }
     .phone-container {
       display: flex;
@@ -54,23 +43,12 @@
       border-radius: 0 5px 5px 0;
       border-left: none;
     }
-    #medication-popup {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.85);
-      color: white;
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-      text-align: center;
-      padding: 20px;
-    }
-    #medication-popup button {
-      width: 150px;
-      margin: 10px;
+    .med-item {
+      background: white;
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 5px;
     }
   </style>
 </head>
@@ -103,24 +81,12 @@
       </select>
       <button type="submit">Add Medication</button>
     </form>
-    <div id="table-container"></div>
+    <div id="medication-list"></div>
   </div>
-
-  <!-- FULLSCREEN NOTIFICATION POPUP -->
-  <div id="medication-popup">
-    <h2 id="popup-title"></h2>
-    <p id="popup-details"></p>
-    <button onclick="markAsTaken()">✅ Taken</button>
-    <button onclick="snoozeReminder()">⏰ Snooze 10 mins</button>
-  </div>
-
-  <audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
 
   <script>
     let user = {};
     let meds = [];
-    let snoozeTimers = {};
-    let activeDoseIndex = null;
 
     window.onload = () => {
       fetch("https://ipapi.co/json")
@@ -158,98 +124,28 @@
       const time = document.getElementById("med-time").value;
       const repeat = document.getElementById("med-repeat").value;
 
-      const today = new Date();
-      const schedule = [];
-
-      for (let i = 0; i < 30; i++) {
-        const date = new Date(today);
-        if (repeat === "daily") date.setDate(today.getDate() + i);
-        if (repeat === "weekly") date.setDate(today.getDate() + (i * 7));
-        const day = date.toLocaleDateString("en-US", { weekday: "long" });
-        const dateStr = date.toISOString().split("T")[0];
-        schedule.push({ day, date: dateStr, time, name, dose, used, status: "⏳ Pending" });
-      }
-
-      schedule.forEach((entry, index) => {
-        const realIndex = meds.length + index;
-        setReminder(entry, realIndex);
-      });
-
-      meds.push(...schedule);
-      renderTable();
+      const today = new Date().toISOString().split("T")[0];
+      const med = { name, dose, used, time, repeat, date: today, status: "⏳ Pending" };
+      meds.push(med);
+      renderMedications();
       document.getElementById("med-form").reset();
     });
 
-    function renderTable() {
-      const container = document.getElementById("table-container");
-      container.innerHTML = "<h3>Monthly Medication Table</h3>";
-      const table = document.createElement("table");
-      table.innerHTML = `<tr><th>Day</th><th>Date</th><th>Time</th><th>Name</th><th>Dose</th><th>Indication</th><th>Status</th></tr>`;
-      meds.forEach((m, i) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `<td>${m.day}</td><td>${m.date}</td><td>${m.time}</td><td>${m.name}</td><td>${m.dose}</td><td>${m.used}</td><td id="status-${i}">${m.status}</td>`;
-        table.appendChild(row);
+    function renderMedications() {
+      const list = document.getElementById("medication-list");
+      list.innerHTML = "<h3>Today's Medications</h3>";
+      meds.forEach((m) => {
+        const div = document.createElement("div");
+        div.className = "med-item";
+        div.innerHTML = `
+          <strong>${m.name}</strong><br>
+          Dose: ${m.dose}<br>
+          For: ${m.used}<br>
+          Time: ${m.time}<br>
+          Status: ${m.status}<br>
+        `;
+        list.appendChild(div);
       });
-      container.appendChild(table);
-    }
-
-    function setReminder(entry, index) {
-      const [h, m] = entry.time.split(":").map(Number);
-      const scheduled = new Date(entry.date);
-      scheduled.setHours(h, m, 0, 0);
-      const now = new Date();
-      const delay = scheduled.getTime() - now.getTime();
-
-      if (delay <= 0) return;
-
-      setTimeout(() => {
-        activeDoseIndex = index;
-        showPopup(entry.name, entry.dose, entry.used);
-        meds[index].status = "🔔 Awaiting Confirmation";
-        renderTable();
-
-        snoozeTimers[index] = setTimeout(() => {
-          if (meds[index].status === "🔔 Awaiting Confirmation") {
-            meds[index].status = "❌ Missed";
-            renderTable();
-            closePopup();
-          }
-        }, 10 * 60 * 1000); // 10 minutes
-      }, delay);
-    }
-
-    function showPopup(name, dose, used) {
-      document.getElementById("popup-title").innerText = `Time to take ${name}`;
-      document.getElementById("popup-details").innerText = `Dose: ${dose} - For: ${used}`;
-      document.getElementById("alarmSound").play();
-      document.getElementById("medication-popup").style.display = "flex";
-    }
-
-    function closePopup() {
-      document.getElementById("medication-popup").style.display = "none";
-    }
-
-    function markAsTaken() {
-      if (activeDoseIndex !== null) {
-        meds[activeDoseIndex].status = "✅ Taken";
-        renderTable();
-        clearTimeout(snoozeTimers[activeDoseIndex]);
-        closePopup();
-      }
-    }
-
-    function snoozeReminder() {
-      if (activeDoseIndex !== null) {
-        clearTimeout(snoozeTimers[activeDoseIndex]);
-        snoozeTimers[activeDoseIndex] = setTimeout(() => {
-          if (meds[activeDoseIndex].status === "🔔 Awaiting Confirmation") {
-            meds[activeDoseIndex].status = "❌ Missed";
-            renderTable();
-            closePopup();
-          }
-        }, 10 * 60 * 1000);
-        closePopup();
-      }
     }
   </script>
 </body>
