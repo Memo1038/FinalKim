@@ -2,188 +2,250 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>DosiThink</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DosiThink - Medication Reminder</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f2f2f2;
-      color: #0D47A1;
-      margin: 0;
+      font-family: 'Arial', sans-serif;
+      background: #f9f9f9;
       padding: 20px;
+      margin: 0;
+    }
+    h1, h2 {
       text-align: center;
+      color: #0D47A1;
     }
-    h1 {
-      font-size: 2.5em;
-      font-weight: bold;
-      margin-bottom: 0.2em;
+    .form-section {
+      max-width: 500px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    h2 {
-      font-size: 1.3em;
-      color: #333;
-      margin-top: 20px;
-    }
-    input, select, button {
+    input, select {
       width: 100%;
-      max-width: 400px;
       padding: 12px;
-      margin: 10px auto;
-      display: block;
-      font-size: 1em;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      margin: 8px 0;
       box-sizing: border-box;
+      font-size: 16px;
     }
     button {
-      background-color: #A8E6CF;
-      color: #000;
+      width: 100%;
+      padding: 12px;
+      background-color: #4A90E2;
+      color: white;
+      border: none;
+      font-size: 18px;
+      border-radius: 5px;
       cursor: pointer;
     }
-    .hidden { display: none; }
+    button:hover {
+      background-color: #357ABD;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
+      margin-top: 30px;
+      background: white;
     }
     th, td {
       border: 1px solid #ccc;
-      padding: 10px;
-      font-size: 0.95em;
+      padding: 8px;
+      text-align: center;
     }
     th {
-      background: #e1f5fe;
+      background: #A8E6CF;
     }
-    .phone-wrapper {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      max-width: 400px;
-      margin: 10px auto;
-    }
-    .phone-prefix {
-      background-color: #ddd;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-right: none;
-      border-radius: 6px 0 0 6px;
-      font-size: 1em;
-    }
-    #phone {
-      border-radius: 0 6px 6px 0;
-      border-left: none;
-    }
+    .hidden { display: none; }
+    .status-pending { color: #FFA500; }
+    .status-taken { color: green; }
+    .status-missed { color: red; }
   </style>
 </head>
 <body>
-  <div id="page-create-account">
-    <h1>DosiThink</h1>
-    <p>Because Every Dose Matters</p>
-    <input type="text" id="name" placeholder="Full Name" required>
-    <input type="number" id="age" placeholder="Age" required>
-    <input type="email" id="email" placeholder="Email" required>
-    <div class="phone-wrapper">
-      <div class="phone-prefix" id="prefix">+20</div>
-      <input type="tel" id="phone" placeholder="Phone Number" required>
+
+<h1>DosiThink</h1>
+
+<div id="userForm" class="form-section">
+  <h2>Welcome</h2>
+  <input type="text" id="username" placeholder="Your Name" required />
+  <input type="number" id="userage" placeholder="Age" required />
+  <input type="email" id="useremail" placeholder="Email" required />
+  <div>
+    <label>Phone Number (Egypt +20)</label>
+    <div style="display: flex;">
+      <input type="text" value="+20" disabled style="width: 70px;" />
+      <input type="tel" id="userphone" pattern="[0-9]{10}" placeholder="1234567890" required style="flex: 1;" />
     </div>
-    <select id="country" required>
-      <option value="">Select Country</option>
-      <option value="Egypt">Egypt</option>
-      <option value="Saudi Arabia">Saudi Arabia</option>
-      <option value="UAE">UAE</option>
-      <option value="Other">Other</option>
-    </select>
-    <button onclick="goToMedication()">Next</button>
   </div>
+  <button onclick="nextToMedication()">Continue</button>
+</div>
 
-  <div id="page-medications" class="hidden">
-    <h2 id="welcome"></h2>
-    <form onsubmit="addMedication(event)">
-      <input type="text" id="med-name" placeholder="Medication Name" required>
-      <input type="text" id="med-dose" placeholder="Dose" required>
-      <input type="text" id="med-indication" placeholder="Drug used for / دواء علاج" required>
-      <input type="time" id="med-time" required>
-      <select id="med-repeat">
-        <option value="daily">Daily</option>
-        <option value="weekly">Weekly</option>
-      </select>
-      <button type="submit">Add Medication</button>
-    </form>
-    <div id="med-summary"></div>
-  </div>
+<div id="medForm" class="form-section hidden">
+  <h2>Add Medication</h2>
+  <input type="text" id="drugName" placeholder="Drug Name" required />
+  <input type="text" id="dose" placeholder="Dose (e.g. 5mg)" required />
+  <input type="text" id="indication" placeholder="Drug Used For / دواء علاج" required />
+  <input type="time" id="doseTime" required />
+  <select id="frequency">
+    <option value="daily">Daily</option>
+    <option value="weekly">Weekly</option>
+  </select>
+  <input type="date" id="startDate" required />
+  <button onclick="saveMedication()">Save Medication</button>
+</div>
 
-  <script>
-    let userName = "";
+<div id="summary" class="form-section hidden">
+  <h2 id="greeting">Welcome Mr.</h2>
+  <div id="medTable"></div>
+</div>
 
-    window.onload = () => {
-      fetch('https://ipapi.co/json/')
-        .then(res => res.json())
-        .then(data => {
-          const prefix = data.country_calling_code || "+20";
-          document.getElementById("prefix").innerText = prefix;
+<script>
+  let userData = { name: '', medications: [] };
 
-          const countrySelect = document.getElementById('country');
-          if (countrySelect && data.country_name) {
-            for (let option of countrySelect.options) {
-              if (option.text.toLowerCase().includes(data.country_name.toLowerCase())) {
-                option.selected = true;
-                break;
-              }
-            }
-          }
+  function nextToMedication() {
+    const name = document.getElementById('username').value.trim();
+    if (!name) return alert('Please enter your name');
+    userData.name = name;
+    document.getElementById('userForm').classList.add('hidden');
+    document.getElementById('medForm').classList.remove('hidden');
+  }
+  function saveMedication() {
+    const name = document.getElementById('drugName').value.trim();
+    const dose = document.getElementById('dose').value.trim();
+    const indication = document.getElementById('indication').value.trim();
+    const time = document.getElementById('doseTime').value;
+    const frequency = document.getElementById('frequency').value;
+    const startDate = new Date(document.getElementById('startDate').value);
+
+    if (!name || !dose || !indication || !time || !startDate) {
+      alert('Please fill all fields');
+      return;
+    }
+
+    const schedule = generateSchedule(frequency, startDate, time, name, dose, indication);
+    userData.medications.push(...schedule);
+
+    document.getElementById('medForm').reset();
+    document.getElementById('medForm').classList.add('hidden');
+    showSummary();
+  }
+
+  function generateSchedule(freq, startDate, time, name, dose, indication) {
+    const result = [];
+    const now = new Date();
+    let date = new Date(startDate);
+    const maxDays = 30;
+
+    for (let i = 0; i < maxDays; i++) {
+      const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' });
+      const isoDate = date.toISOString().split('T')[0];
+      const dateTime = new Date(`${isoDate}T${time}`);
+      if (dateTime >= now) {
+        result.push({
+          day: dayOfWeek,
+          date: isoDate,
+          time: time,
+          name: name,
+          dose: dose,
+          indication: indication,
+          status: '⏳ Pending'
         });
-    };
-
-    function goToMedication() {
-      const name = document.getElementById('name').value;
-      const age = document.getElementById('age').value;
-      const email = document.getElementById('email').value;
-      const phone = document.getElementById('phone').value;
-      const country = document.getElementById('country').value;
-
-      if (!name || !age || !email || !phone || !country) {
-        alert("Please fill all fields.");
-        return;
+        scheduleNotification(dateTime, name, dose, indication);
       }
-
-      userName = name;
-      document.getElementById("page-create-account").classList.add("hidden");
-      document.getElementById("page-medications").classList.remove("hidden");
-      document.getElementById("welcome").innerText = `Welcome Mr. ${name}`;
+      if (freq === 'weekly') {
+        date.setDate(date.getDate() + 7);
+      } else {
+        date.setDate(date.getDate() + 1);
+      }
     }
 
-    function addMedication(e) {
-      e.preventDefault();
+    return result;
+  }
 
-      const name = document.getElementById('med-name').value;
-      const dose = document.getElementById('med-dose').value;
-      const indication = document.getElementById('med-indication').value;
-      const time = document.getElementById('med-time').value;
-      const repeat = document.getElementById('med-repeat').value;
+  function showSummary() {
+    document.getElementById('summary').classList.remove('hidden');
+    document.getElementById('greeting').innerText = `Welcome Mr. ${userData.name}`;
+    
+    const tableHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Day</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Name</th>
+            <th>Dose</th>
+            <th>Drug Used For</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${userData.medications.map((med, index) => `
+            <tr id="med-${index}">
+              <td>${med.day}</td>
+              <td>${med.date}</td>
+              <td>${med.time}</td>
+              <td>${med.name}</td>
+              <td>${med.dose}</td>
+              <td>${med.indication}</td>
+              <td class="status">${med.status}</td>
+              <td>
+                <button onclick="markTaken(${index})">✅ Taken</button>
+                <button onclick="snooze(${index})">⏰ Snooze</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+    
+    document.getElementById('medTable').innerHTML = tableHTML;
+  }
 
-      let table = `<table><tr><th>Day</th><th>Date</th><th>Time</th><th>Name</th><th>Dose</th><th>Drug Used For</th><th>Status</th></tr>`;
-      const now = new Date();
-      const [h, m] = time.split(':').map(Number);
+  function markTaken(index) {
+    userData.medications[index].status = '✅ Taken';
+    updateRowStatus(index);
+  }
 
-      for (let i = 0; i < 4; i++) {
-        const date = new Date(now);
-        date.setDate(now.getDate() + (repeat === "daily" ? i : i * 7));
-        date.setHours(h, m, 0, 0);
-        const dateStr = date.toISOString().split('T')[0];
-        const day = date.toLocaleDateString('en-US', { weekday: 'long' });
-
-        table += `<tr><td>${day}</td><td>${dateStr}</td><td>${time}</td><td>${name}</td><td>${dose}</td><td>${indication}</td><td>⏳ Pending</td></tr>`;
+  function snooze(index) {
+    userData.medications[index].status = '⏰ Snoozed for 10 min';
+    updateRowStatus(index);
+    setTimeout(() => {
+      if (userData.medications[index].status === '⏰ Snoozed for 10 min') {
+        userData.medications[index].status = '❌ Missed';
+        updateRowStatus(index);
+        alert(`Missed dose for ${userData.medications[index].name}.\nA notification should be sent to the family member.`);
       }
+    }, 600000); // 10 minutes
+  }
 
-      table += '</table>';
-      document.getElementById("med-summary").innerHTML += table;
-
-      // Clear inputs
-      document.getElementById('med-name').value = '';
-      document.getElementById('med-dose').value = '';
-      document.getElementById('med-indication').value = '';
-      document.getElementById('med-time').value = '';
-      document.getElementById('med-repeat').value = 'daily';
+  function updateRowStatus(index) {
+    const row = document.getElementById(`med-${index}`);
+    if (row) {
+      row.querySelector('.status').innerText = userData.medications[index].status;
     }
-  </script>
+  }
+
+  function scheduleNotification(dateTime, name, dose, indication) {
+    const now = new Date();
+    const diff = dateTime.getTime() - now.getTime();
+    if (diff > 0) {
+      setTimeout(() => {
+        if (Notification.permission === 'granted') {
+          const n = new Notification(`Time to take ${name}`, {
+            body: `Dose: ${dose}\nUsed For: ${indication}`,
+          });
+          const sound = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
+          sound.play();
+        }
+      }, diff);
+    }
+  }
+
+  if (Notification && Notification.permission !== 'granted') {
+    Notification.requestPermission();
+  }
+</script>
 </body>
 </html>
