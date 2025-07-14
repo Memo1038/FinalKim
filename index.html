@@ -36,9 +36,7 @@
       border: 1px solid #ccc;
       text-align: center;
     }
-    .hidden {
-      display: none;
-    }
+    .hidden { display: none; }
     .phone-container {
       display: flex;
       max-width: 400px;
@@ -186,18 +184,10 @@
       const container = document.getElementById("table-container");
       container.innerHTML = "<h3>Monthly Medication Table</h3>";
       const table = document.createElement("table");
-      table.innerHTML = `
-        <tr><th>Day</th><th>Date</th><th>Time</th><th>Name</th><th>Dose</th><th>Indication</th><th>Status</th></tr>`;
+      table.innerHTML = `<tr><th>Day</th><th>Date</th><th>Time</th><th>Name</th><th>Dose</th><th>Indication</th><th>Status</th></tr>`;
       meds.forEach((m, i) => {
         const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${m.day}</td>
-          <td>${m.date}</td>
-          <td>${m.time}</td>
-          <td>${m.name}</td>
-          <td>${m.dose}</td>
-          <td>${m.used}</td>
-          <td id="status-${i}">${m.status}</td>`;
+        row.innerHTML = `<td>${m.day}</td><td>${m.date}</td><td>${m.time}</td><td>${m.name}</td><td>${m.dose}</td><td>${m.used}</td><td id="status-${i}">${m.status}</td>`;
         table.appendChild(row);
       });
       container.appendChild(table);
